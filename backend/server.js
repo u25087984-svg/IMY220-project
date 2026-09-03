@@ -12,9 +12,35 @@ app.get("/", (req, res) => {
   res.json({ message: "Momentum backend is running" });
 });
 
-// Auth endpoints will be stubbed here in Part 5:
-// app.post("/api/signin", ...)
-// app.post("/api/signup", ...)
+// Stubbed sign-in endpoint — returns dummy data, no real auth yet
+app.post("/api/signin", (req, res) => {
+  const { username, password } = req.body;
+
+  res.json({
+    success: true,
+    user: {
+      id: 1,
+      username: username,
+      bio: "This is a dummy bio.",
+      profilePic: "src/assets/images/robot.jpg",
+    },
+  });
+});
+
+// Stubbed sign-up endpoint — returns dummy data, no real auth yet
+app.post("/api/signup", (req, res) => {
+  const { username, password } = req.body;
+
+  res.json({
+    success: true,
+    user: {
+      id: 99,
+      username: username,
+      bio: "",
+      profilePic: "src/assets/images/robot.jpg",
+    },
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Momentum backend listening on port ${PORT}`);

@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Splash from './pages/Splash.jsx';
 import Home from './pages/Home.jsx';
-import ProfilePage from './pages/Profile.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 import PostPage from './pages/PostPage.jsx';
 
 function App() {
