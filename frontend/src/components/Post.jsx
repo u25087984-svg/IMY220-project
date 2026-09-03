@@ -4,9 +4,9 @@ import Comments from './Comments.jsx';
 
 function Post({ post }) {
     return (
-        <div>
-            <p>{post.username}</p>
-            <p>{post.caption}</p>
+        <div className="post">
+            <p className="post-username">{post.username}</p>
+            <p className="post-caption">{post.caption}</p>
             <Image src={post.image} alt={post.caption} />
             <Comments comments={post.comments} />
         </div>

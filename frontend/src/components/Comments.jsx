@@ -2,9 +2,9 @@ import React from 'react';
 
 function Comments({ comments }) {
     return (
-        <div>
+        <div className="comments">
             {comments.map((comment) => (
-                <div key={comment.id}>
+                <div className="comment" key={comment.id}>
                     <p>{comment.commUname}</p>
                     <p>{comment.comment}</p>
                 </div>

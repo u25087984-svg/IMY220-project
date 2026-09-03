@@ -1,10 +1,9 @@
 import React from 'react';
-import { posts } from '../Data.js';
 import PostPreview from './PostPreview.jsx';
 
-function Feed() {
+function Feed({ posts }) {
     return (
-        <div>
+        <div className="feed">
             {posts.map((post) => (
                 <PostPreview key={post.id} post={post} />
             ))}

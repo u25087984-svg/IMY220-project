@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function SignUpForm() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
+    const navigate = useNavigate();
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -34,7 +36,12 @@ function SignUpForm() {
             });
 
             const data = await response.json();
-            console.log('Sign up response:', data);
+
+            if (data.success) {
+                navigate('/home');
+            } else {
+                setError('Sign up failed.');
+            }
         } catch (err) {
             setError('Could not reach the server. Is the backend running?');
         }

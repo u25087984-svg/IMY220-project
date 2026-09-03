@@ -2,26 +2,22 @@ import React from 'react';
 import Image from './Image.jsx';
 import Friend from './Friend.jsx';
 import PostPreview from './PostPreview.jsx';
-import { posts, users } from '../Data.js';
 
-function Profile({ user }) {
-    const userPosts = posts.filter((post) => user.posts.includes(post.id));
-    const userFriends = users.filter((u) => user.friends.includes(u.id));
-
+function Profile({ user, posts, friends }) {
     return (
-        <div>
-            <p>{user.username}</p>
-            <p>{user.bio}</p>
+        <div className="profile">
             <Image src={user.profilePic} alt={user.username} />
+            <p className="profile-username">{user.username}</p>
+            <p className="profile-bio">{user.bio}</p>
 
-            <div>
-                {userFriends.map((friend) => (
+            <div className="friend-list">
+                {friends.map((friend) => (
                     <Friend key={friend.id} friend={friend} />
                 ))}
             </div>
 
-            <div>
-                {userPosts.map((post) => (
+            <div className="feed">
+                {posts.map((post) => (
                     <PostPreview key={post.id} post={post} />
                 ))}
             </div>

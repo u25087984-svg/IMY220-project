@@ -3,7 +3,7 @@ const posts = [
         id: 1,
         username: "@sarah",
         caption: "Studying React today!",
-        image: "src/assets/images/robot.jpg",
+        image:  "/images/robot.jpg",
         comments: [
             { id: 1, commUname: "@geff_Lion", comment: "I am in love with you" },
             { id: 2, commUname: "@Leven_Kevin", comment: "Amazing work!" },
@@ -14,7 +14,7 @@ const posts = [
         id: 2,
         username: "@john",
         caption: "Finished Practical 4.",
-        image: "src/assets/images/robot.jpg",
+        image:  "/images/robot.jpg",
         comments: [
             { id: 4, commUname: "@Ronny_Lin", comment: "You are fantastic" },
             { id: 5, commUname: "@Leeeeeroy", comment: "Jenkins!" },
@@ -25,7 +25,7 @@ const posts = [
         id: 3,
         username: "@leanne",
         caption: "Sunset over campus.",
-        image: "src/assets/images/robot.jpg",
+        image:  "/images/robot.jpg",
         comments: [
             { id: 7, commUname: "@Box_Man", comment: "Come to my house!" },
             { id: 8, commUname: "@Aint_no_way", comment: "Yeah, right" },
@@ -36,7 +36,7 @@ const posts = [
         id: 4,
         username: "@leanne",
         caption: "My favourite river.",
-        image: "src/assets/images/robot.jpg",
+        image:  "/images/robot.jpg",
         comments: [
             { id: 10, commUname: "@Manman", comment: "I don't think that's correct" },
             { id: 11, commUname: "@LebronJones", comment: "I can basketball" },
@@ -50,7 +50,7 @@ const users = [
         id: 1,
         username: "@sarah",
         password: "Password123",
-        profilePic: "src/assets/images/robot.jpg",
+        profilePic:  "/images/robot.jpg",
         bio: "React enthusiast. Coffee-powered.",
         posts: [1],
         friends: [2, 3]
@@ -59,7 +59,7 @@ const users = [
         id: 2,
         username: "@john",
         password: "KrampusBiggest345",
-        profilePic: "src/assets/images/robot.jpg",
+        profilePic:  "/images/robot.jpg",
         bio: "Practical 4 survivor.",
         posts: [2],
         friends: [1]
@@ -68,7 +68,7 @@ const users = [
         id: 3,
         username: "@leanne",
         password: "ILoveBananas24",
-        profilePic: "src/assets/images/robot.jpg",
+        profilePic:  "/images/robot.jpg",
         bio: "Sunsets and rivers.",
         posts: [3, 4],
         friends: [1]
