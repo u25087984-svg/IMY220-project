@@ -1,28 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Header from '../components/Header.jsx';
 import Post from '../components/Post.jsx';
 import EditPost from '../components/EditPost.jsx';
-import { posts } from '../Data.js';
+import { api } from '../api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 function PostPage() {
     const { id } = useParams();
-    const post = posts.find((p) => p.id === Number(id));
+    const { user } = useAuth();
+    const [post, setPost] = useState(null);
+    const [error, setError] = useState('');
 
-    if (!post) {
-        return (
-            <div>
-                <Header />
-                <p>Post not found.</p>
-            </div>
-        );
-    }
+    useEffect(() => {
+        api(`/posts/${id}`).then(setPost).catch((err) => setError(err.message));
+    }, [id]);
 
     return (
-        <div className="post-page">
+        <div>
             <Header />
-            <Post post={post} />
-            <EditPost post={post} />
+            <div className="page flex flex-col gap-4">
+                {error && <p className="error">{error}</p>}
+                {!post && !error && <p>Loading...</p>}
+                {post && (
+                    <>
+                        <Post post={post} onUpdated={setPost} />
+                        {post.username === user.username && (
+                            <EditPost post={post} onSaved={setPost} />
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }

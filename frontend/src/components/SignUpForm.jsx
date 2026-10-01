@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 function SignUpForm() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     async function handleSubmit(e) {
@@ -15,73 +18,54 @@ function SignUpForm() {
             setError('All fields are required.');
             return;
         }
-
         if (password.length < 8) {
             setError('Password must be at least 8 characters.');
             return;
         }
-
         if (password !== confirmPassword) {
             setError('Passwords do not match.');
             return;
         }
-
         setError('');
 
+        // usernames in the database all start with "@"
+        const name = username.trim().startsWith('@') ? username.trim() : `@${username.trim()}`;
+
         try {
-            const response = await fetch('http://localhost:3001/api/signup', {
+            const data = await api('/signup', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: { username: name, password },
             });
-
-            const data = await response.json();
-
-            if (data.success) {
-                navigate('/home');
-            } else {
-                setError('Sign up failed.');
-            }
+            login(data.user);
+            navigate('/home');
         } catch (err) {
-            setError('Could not reach the server. Is the backend running?');
+            setError(err.message);
         }
     }
 
     return (
-        <form onSubmit={handleSubmit}>
-            {error && <p className="form-error">{error}</p>}
+        <form onSubmit={handleSubmit} className="card flex w-full max-w-sm flex-col gap-3 text-left">
+            {error && <p className="error">{error}</p>}
 
-            <label>
-                Username:
-                <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                />
+            <label className="field">
+                Username
+                <input className="input" type="text" value={username}
+                    onChange={(e) => setUsername(e.target.value)} required />
             </label>
 
-            <label>
-                Password:
-                <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+            <label className="field">
+                Password
+                <input className="input" type="password" value={password}
+                    onChange={(e) => setPassword(e.target.value)} required />
             </label>
 
-            <label>
-                Confirm Password:
-                <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                />
+            <label className="field">
+                Confirm Password
+                <input className="input" type="password" value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)} required />
             </label>
 
-            <button type="submit">Sign Up</button>
+            <button className="btn" type="submit">Sign Up</button>
         </form>
     );
 }

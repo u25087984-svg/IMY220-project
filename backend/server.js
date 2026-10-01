@@ -1,47 +1,44 @@
+
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
+import connectDB from "./db.js";
+import authRoutes from "./routes/auth.js";
+import postRoutes from "./routes/posts.js";
+import userRoutes from "./routes/users.js";
+import albumRoutes from "./routes/albums.js";
 
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 
-// Basic health check — confirms the server is alive
+// Health check
 app.get("/", (req, res) => {
   res.json({ message: "Momentum backend is running" });
 });
 
-// Stubbed sign-in endpoint — returns dummy data, no real auth yet
-app.post("/api/signin", (req, res) => {
-  const { username, password } = req.body;
+app.use("/api", authRoutes);       
+app.use("/api/posts", postRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/albums", albumRoutes);
 
-  res.json({
-    success: true,
-    user: {
-      id: 1,
-      username: username,
-      bio: "This is a dummy bio.",
-      profilePic: "src/assets/images/robot.jpg",
-    },
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).json({ error: err.message || "Server error" });
+});
+
+const PORT = process.env.PORT || 3001;
+
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Momentum backend listening on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to connect to MongoDB:", err.message);
+    process.exit(1);
   });
-});
-
-// Stubbed sign-up endpoint — returns dummy data, no real auth yet
-app.post("/api/signup", (req, res) => {
-  const { username, password } = req.body;
-
-  res.json({
-    success: true,
-    user: {
-      id: 99,
-      username: username,
-      bio: "",
-      profilePic: "src/assets/images/robot.jpg",
-    },
-  });
-});
-
-app.listen(PORT, () => {
-  console.log(`Momentum backend listening on port ${PORT}`);
-});

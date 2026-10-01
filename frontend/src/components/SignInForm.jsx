@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 function SignInForm() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const { login } = useAuth();
     const navigate = useNavigate();
 
     async function handleSubmit(e) {
@@ -14,53 +17,37 @@ function SignInForm() {
             setError('Both username and password are required.');
             return;
         }
-
         setError('');
 
         try {
-            const response = await fetch('http://localhost:3001/api/signin', {
+            const data = await api('/signin', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
+                body: { username: username.trim(), password },
             });
-
-            const data = await response.json();
-
-            if (data.success) {
-                navigate('/home');
-            } else {
-                setError('Sign in failed.');
-            }
+            login(data.user);
+            navigate('/home');
         } catch (err) {
-            setError('Could not reach the server. Is the backend running?');
+            setError(err.message);
         }
     }
 
     return (
-        <form onSubmit={handleSubmit}>
-            {error && <p className="form-error">{error}</p>}
+        <form onSubmit={handleSubmit} className="card flex w-full max-w-sm flex-col gap-3 text-left">
+            {error && <p className="error">{error}</p>}
 
-            <label>
-                Username:
-                <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                />
+            <label className="field">
+                Username
+                <input className="input" type="text" value={username}
+                    onChange={(e) => setUsername(e.target.value)} placeholder="@sarah" required />
             </label>
 
-            <label>
-                Password:
-                <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                />
+            <label className="field">
+                Password
+                <input className="input" type="password" value={password}
+                    onChange={(e) => setPassword(e.target.value)} required />
             </label>
 
-            <button type="submit">Log In</button>
+            <button className="btn" type="submit">Log In</button>
         </form>
     );
 }

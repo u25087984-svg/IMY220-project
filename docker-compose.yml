@@ -1,0 +1,20 @@
+services:
+  backend:
+    build: ./backend
+    container_name: momentum-backend
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: momentum-frontend
+    environment:
+      - VITE_API_TARGET=http://backend:3001
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped

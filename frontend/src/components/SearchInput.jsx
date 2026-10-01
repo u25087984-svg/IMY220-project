@@ -1,23 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-function SearchInput() {
-    const [searchTerm, setSearchTerm] = useState('');
-
-    function handleSubmit(e) {
-        e.preventDefault();
-        console.log('Search for:', searchTerm);
-    }
-
+function SearchInput({ term, setTerm }) {
     return (
-        <form onSubmit={handleSubmit} className="search-input">
-            <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button type="submit">Search</button>
-        </form>
+        <input
+            className="input mb-4"
+            type="text"
+            placeholder="Search users, captions or #hashtags..."
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+        />
     );
 }
 
