@@ -1,46 +1,19 @@
-Momentum - Photo Sharing Website
-IMY 220 - Deliverable 2 (submission D3)
+MOMENTUM - IMY 220 PROJECT
 
-GitHub repo: https://github.com/u25087984-svg/IMY220-project
+TEST ACCOUNTS
+- Standard User: test@test.com / test1234
+- Admin User: admin@test.com / admin1234
 
---------------------------------------------------
-Project structure
---------------------------------------------------
-frontend/   Vite + React + TailwindCSS app
-backend/    Express + Mongoose API (MongoDB Atlas)
-docker-compose.yml   runs both containers together
+HOW TO RUN
+1. Ensure Docker Desktop is running.
+2. Open a terminal in the root directory of this project.
+3. Run: docker compose up --build
+4. Open http://localhost:5173 in your browser.
 
---------------------------------------------------
-Database
---------------------------------------------------
-MongoDB Atlas. The connection string is in backend/.env (MONGO_URI)
-and in MONGO_CONNECTION.txt.
-To reset/seed the database with sample data (2+ users, posts, album, friends):
-  docker compose exec backend npm run seed
+DATABASE CONNECTION STRING
+mongodb+srv://simonvogel365_db_user:n1ZudXLc1BHw9J91@cluster0.wgacw4d.mongodb.net/?appName=Cluster0
 
-Demo logins (from the seed):
-  @sarah  / Password123
-  @john   / KrampusBiggest345
-  @leanne / ILoveBananas24
-
---------------------------------------------------
-Running with Docker (use these commands)
---------------------------------------------------
-From the project root (the folder containing docker-compose.yml):
-
-  docker compose up --build
-
-Then open http://localhost:5173 in a browser.
-The API runs on http://localhost:3001 (the frontend proxies /api to it).
-
-Stop everything:
-  docker compose down
-
---------------------------------------------------
-Equivalent plain docker commands (without compose)
---------------------------------------------------
-  docker network create momentum-net
-  docker build -t momentum-backend ./backend
-  docker build -t momentum-frontend ./frontend
-  docker run -d --name backend --network momentum-net --env-file ./backend/.env -p 3001:3001 momentum-backend
-  docker run -d --name frontend --network momentum-net -e VITE_API_TARGET=http://backend:3001 -p 5173:5173 momentum-frontend
+DIRECTORY STRUCTURE
+/backend       -> Node.js/Express API, Mongoose models, routes, and database connection.
+/frontend      -> React/Vite frontend, Tailwind CSS styling, and UI components.
+docker-compose.yml -> Orchestrates the frontend and backend containers.

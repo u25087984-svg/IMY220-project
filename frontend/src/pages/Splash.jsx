@@ -1,36 +1,41 @@
-import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import SignInForm from '../components/SignInForm.jsx';
-import SignUpForm from '../components/SignUpForm.jsx';
-import { useAuth } from '../context/AuthContext.jsx';
+import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-function Splash() {
-    const [view, setView] = useState('buttons'); // 'buttons' | 'signin' | 'signup'
-    const { user } = useAuth();
+export default function Splash() {
+  const { user } = useAuth();
 
-    if (user) return <Navigate to="/home" replace />;
+  return (
+    // 1. Relative container
+    <div className="relative min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-4 overflow-hidden">
+      
+      {/* 2. glitch_sky.jpg background (z-0) */}
+      <div className="absolute inset-0 z-0 bg-[url('/glitch_sky.jpg')] bg-cover bg-center"></div>
+      
+      {/* 3. glitch_gif.gif overlay (z-10) - change opacity-30 to make it more/less transparent */}
+      <div className="absolute inset-0 z-10 bg-[url('/glitch_gif.gif')] bg-cover bg-center opacity-30 pointer-events-none mix-blend-screen"></div>
+      
+      {/* 4. UI Components (z-20) so they sit on top */}
+      <div className="relative z-20 flex flex-col items-center justify-center w-full">
+        <h1 className="font-logo text-5xl md:text-7xl font-black tracking-widest uppercase mb-12">
+          Momentum
+        </h1>
 
-    return (
-        <div className="flex min-h-screen flex-col items-center justify-center gap-8 p-6 text-center">
-            <h1 className="text-4xl font-bold uppercase tracking-[0.4em]">Momentum</h1>
-
-            {view === 'buttons' && (
-                <div className="flex w-52 flex-col gap-4">
-                    <button className="btn" onClick={() => setView('signup')}>Sign Up</button>
-                    <button className="btn" onClick={() => setView('signin')}>Log In</button>
-                </div>
-            )}
-
-            {view === 'signup' && <SignUpForm />}
-            {view === 'signin' && <SignInForm />}
-
-            {view !== 'buttons' && (
-                <button className="text-sm underline hover:text-accent" onClick={() => setView('buttons')}>
-                    Back
-                </button>
-            )}
+        <div className="mb-12 w-32 h-32 flex items-center justify-center text-4xl">
+                  <img src="/save-icon.png" alt="Save Icon" className="mb-12 w-32 h-32 object-contain" />
         </div>
-    );
-}
 
-export default Splash;
+        <div className="flex flex-col gap-4 w-full max-w-[280px]">
+          {user ? (
+            <Link to="/home" className="btn text-2xl py-2">go to feed</Link>
+          ) : (
+            <>
+              <Link to="/signup" className="btn text-2xl py-2">sign up</Link>
+              <Link to="/signin" className="btn text-2xl py-2">log in</Link>
+            </>
+          )}
+        </div>
+      </div>
+
+    </div>
+  );
+}

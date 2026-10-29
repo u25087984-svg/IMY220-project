@@ -1,155 +1,74 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { api, parseTags, tagsToText } from '../api.js';
+import { useEffect, useState } from "react";
+import { api } from "../lib/api";
+import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
-function AlbumCard({ album, posts, isOwn, onChanged }) {
-    const [editing, setEditing] = useState(false);
-    const [name, setName] = useState(album.name);
-    const [description, setDescription] = useState(album.description);
-    const [hashtags, setHashtags] = useState(tagsToText(album.hashtags));
-    const [toAdd, setToAdd] = useState('');
-    const [error, setError] = useState('');
+export default function Albums() {
+  const { user } = useAuth();
+  const [albums, setAlbums] = useState([]);
+  const [form, setForm] = useState({ name: "", description: "", hashtags: "" });
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
-    const inAlbum = posts.filter((p) => album.posts.includes(p.id));
-    const available = posts.filter((p) => !album.posts.includes(p.id));
+  async function load() {
+    try { setAlbums(await api.get("/albums")); }
+    catch (e) { setError(e.message); }
+  }
+  useEffect(() => { load(); }, []);
 
-    async function run(path, method, body) {
-        try {
-            await api(path, { method, body });
-            setError('');
-            onChanged();
-        } catch (err) {
-            setError(err.message);
-        }
-    }
+  async function create(e) {
+    e.preventDefault();
+    setBusy(true); setError("");
+    try {
+      const tags = form.hashtags.split(/[\s,]+/).map(t => t.trim()).filter(Boolean)
+        .map(t => t.startsWith("#") ? t : `#${t}`);
+      await api.post("/albums", { name: form.name, description: form.description, hashtags: tags });
+      setForm({ name: "", description: "", hashtags: "" });
+      load();
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  }
 
-    async function save(e) {
-        e.preventDefault();
-        await run(`/albums/${album.id}`, 'PUT', { name, description, hashtags: parseTags(hashtags) });
-        setEditing(false);
-    }
+  async function remove(id) {
+    if (!confirm("Delete this album?")) return;
+    try { await api.del(`/albums/${id}`); load(); }
+    catch (e) { setError(e.message); }
+  }
 
-    return (
-        <div className="card flex flex-col gap-2">
-            {error && <p className="error">{error}</p>}
+  return (
+    <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <h1 className="font-display text-3xl">Albums</h1>
+      {error && <p className="text-red-600">{error}</p>}
 
-            {editing ? (
-                <form onSubmit={save} className="flex flex-col gap-2">
-                    <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
-                    <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} />
-                    <input className="input" value={hashtags} onChange={(e) => setHashtags(e.target.value)} />
-                    <div className="flex gap-2">
-                        <button className="btn btn-sm" type="submit">Save</button>
-                        <button className="btn btn-sm" type="button" onClick={() => setEditing(false)}>Cancel</button>
-                    </div>
-                </form>
-            ) : (
-                <>
-                    <h4 className="text-lg font-bold">{album.name}</h4>
-                    <p className="text-sm">{album.description}</p>
-                    <p className="tag">{(album.hashtags || []).join(' ')}</p>
-                </>
-            )}
+      <form onSubmit={create} className="border border-border rounded-xl p-4 space-y-2 bg-surface">
+        <h2 className="font-semibold">Create album</h2>
+        <input placeholder="Album name" required value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <input placeholder="Description" value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        <input placeholder="Hashtags (#travel #summer)" value={form.hashtags}
+          onChange={(e) => setForm({ ...form, hashtags: e.target.value })} />
+        <button disabled={busy} className="btn btn-primary">{busy ? "Creating…" : "Create"}</button>
+      </form>
 
-            <div className="flex flex-wrap gap-2">
-                {inAlbum.length === 0 && <p className="text-sm text-paper/60">No posts in this album.</p>}
-                {inAlbum.map((p) => (
-                    <div key={p.id} className="w-20">
-                        <Link to={`/post/${p.id}`}>
-                            <img className="h-20 w-20 border border-paper/50 object-cover" src={p.image} alt={p.caption} />
-                        </Link>
-                        {isOwn && (
-                            <button className="btn btn-sm btn-danger mt-1 w-full"
-                                onClick={() => run(`/albums/${album.id}/posts/${p.id}`, 'DELETE')}>
-                                Remove
-                            </button>
-                        )}
-                    </div>
-                ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {albums.map((a) => (
+          <div key={a.id} className="border border-border rounded-xl p-4 bg-surface">
+            <Link to={`/albums/${a.id}`} className="font-semibold text-lg hover:text-accent">{a.name}</Link>
+            <p className="text-sm text-muted">{a.username}</p>
+            <p className="text-sm mt-1">{a.description}</p>
+            <div className="flex flex-wrap gap-1 text-xs mt-2">
+              {a.hashtags?.map((t, i) => (
+                <Link key={i} to={`/search?q=${encodeURIComponent(t)}`} className="text-accent">{t}</Link>
+              ))}
             </div>
-
-            {isOwn && (
-                <div className="flex flex-wrap items-center gap-2 border-t border-paper/30 pt-2">
-                    {available.length > 0 && (
-                        <>
-                            <select className="input w-auto" value={toAdd} onChange={(e) => setToAdd(e.target.value)}>
-                                <option value="">Add a post...</option>
-                                {available.map((p) => (
-                                    <option key={p.id} value={p.id}>#{p.id} {p.caption.slice(0, 25)}</option>
-                                ))}
-                            </select>
-                            <button className="btn btn-sm" disabled={!toAdd}
-                                onClick={() => { run(`/albums/${album.id}/posts/${toAdd}`, 'POST'); setToAdd(''); }}>
-                                Add
-                            </button>
-                        </>
-                    )}
-                    <button className="btn btn-sm" onClick={() => setEditing(!editing)}>Edit</button>
-                    <button className="btn btn-sm btn-danger"
-                        onClick={() => window.confirm('Delete this album?') && run(`/albums/${album.id}`, 'DELETE')}>
-                        Delete
-                    </button>
-                </div>
+            {a.username === user.username && (
+              <button onClick={() => remove(a.id)} className="btn btn-ghost text-red-600 mt-3 text-sm">Delete</button>
             )}
-        </div>
-    );
+          </div>
+        ))}
+        {albums.length === 0 && <p className="text-muted">No albums yet.</p>}
+      </div>
+    </div>
+  );
 }
-
-function Albums({ owner, isOwn, posts }) {
-    const [albums, setAlbums] = useState([]);
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [hashtags, setHashtags] = useState('');
-    const [error, setError] = useState('');
-
-    const load = useCallback(() => {
-        api('/albums')
-            .then((all) => setAlbums(all.filter((a) => a.username === owner)))
-            .catch((err) => setError(err.message));
-    }, [owner]);
-
-    useEffect(() => { load(); }, [load]);
-
-    async function create(e) {
-        e.preventDefault();
-        try {
-            await api('/albums', {
-                method: 'POST',
-                body: { username: owner, name, description, hashtags: parseTags(hashtags) },
-            });
-            setName(''); setDescription(''); setHashtags(''); setError('');
-            load();
-        } catch (err) {
-            setError(err.message);
-        }
-    }
-
-    return (
-        <div className="flex flex-col gap-3">
-            <h3 className="border-b border-paper/40 pb-1 font-bold">Albums ({albums.length})</h3>
-            {error && <p className="error">{error}</p>}
-
-            {isOwn && (
-                <form onSubmit={create} className="card flex max-w-md flex-col gap-2">
-                    <h4 className="font-bold">Create an album</h4>
-                    <input className="input" placeholder="Album name" value={name}
-                        onChange={(e) => setName(e.target.value)} required />
-                    <input className="input" placeholder="Description" value={description}
-                        onChange={(e) => setDescription(e.target.value)} />
-                    <input className="input" placeholder="#hashtags" value={hashtags}
-                        onChange={(e) => setHashtags(e.target.value)} />
-                    <button className="btn" type="submit">Create Album</button>
-                </form>
-            )}
-
-            {albums.length === 0 && <p className="text-sm text-paper/60">No albums yet.</p>}
-            <div className="grid gap-4 md:grid-cols-2">
-                {albums.map((a) => (
-                    <AlbumCard key={a.id} album={a} posts={posts} isOwn={isOwn} onChanged={load} />
-                ))}
-            </div>
-        </div>
-    );
-}
-
-export default Albums;

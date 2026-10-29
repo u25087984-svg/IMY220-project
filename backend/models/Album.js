@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const albumSchema = new mongoose.Schema(
@@ -8,7 +7,7 @@ const albumSchema = new mongoose.Schema(
     name: { type: String, required: true },
     description: { type: String, default: "" },
     hashtags: [{ type: String }],
-    posts: [{ type: Number }],   // post ids
+    posts: [{ type: Number }],
   },
   { timestamps: true }
 );

@@ -1,34 +1,39 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
+import { api } from "../lib/api";
 
 const AuthContext = createContext(null);
-const KEY = 'momentum_user';
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(KEY));
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  function login(u) {
-    localStorage.setItem(KEY, JSON.stringify(u));
-    setUser(u);
+  useEffect(() => {
+    api.get("/me")
+      .then((r) => setUser(r.user))
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function login(email, password) {
+    const r = await api.post("/signin", { email, password });
+    setUser(r.user);
+    return r.user;
   }
-
-  function logout() {
-    localStorage.removeItem(KEY);
+  async function register(payload) {
+    const r = await api.post("/signup", payload);
+    setUser(r.user);
+    return r.user;
+  }
+  async function logout() {
+    await api.post("/logout");
     setUser(null);
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

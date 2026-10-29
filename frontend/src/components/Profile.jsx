@@ -9,21 +9,19 @@ function Profile({ user, me, posts, friends, requests, onChanged }) {
     const [error, setError] = useState('');
 
     const isOwn = me.username === user.username;
-    const isFriend = user.friends.includes(me.id);
-    const iRequested = user.friendRequests.includes(me.id);
-    const theyRequested = me.friendRequests.includes(user.id);
+    const isFriend = me.friends.includes(user.id);
+    const iRequested = me.sentRequests.includes(user.id);          // I sent to them
+    const theyRequested = me.friendRequests.includes(user.id);     // they sent to me
 
-    async function run(path) {
+    async function run(path, method = 'POST') {
         try {
-            await api(path, { method: 'POST' });
+            await api(path, { method });
             setError('');
             onChanged();
         } catch (err) {
             setError(err.message);
         }
     }
-
-    const me_ = enc(me.username);
 
     return (
         <div className="flex flex-col items-center gap-3 text-center">
@@ -34,22 +32,31 @@ function Profile({ user, me, posts, friends, requests, onChanged }) {
             {error && <p className="error">{error}</p>}
 
             {!isOwn && (
-                <div>
+                <div className="flex flex-wrap gap-2">
                     {isFriend && (
-                        <button className="btn btn-danger" onClick={() => run(`/users/${me_}/unfriend/${user.id}`)}>
+                        <button className="btn btn-danger"
+                            onClick={() => run(`/users/${enc(user.username)}/unfriend`)}>
                             Unfriend
                         </button>
                     )}
                     {!isFriend && theyRequested && (
-                        <button className="btn" onClick={() => run(`/users/${me_}/accept/${user.id}`)}>
-                            Accept friend request
-                        </button>
+                        <>
+                            <button className="btn"
+                                onClick={() => run(`/users/${enc(user.username)}/accept`)}>
+                                Accept
+                            </button>
+                            <button className="btn"
+                                onClick={() => run(`/users/${enc(user.username)}/decline`)}>
+                                Decline
+                            </button>
+                        </>
                     )}
                     {!isFriend && !theyRequested && iRequested && (
                         <button className="btn" disabled>Request sent</button>
                     )}
                     {!isFriend && !theyRequested && !iRequested && (
-                        <button className="btn" onClick={() => run(`/users/${me_}/friend-request/${enc(user.username)}`)}>
+                        <button className="btn"
+                            onClick={() => run(`/users/${enc(user.username)}/friend-request`)}>
                             Add friend
                         </button>
                     )}
@@ -60,15 +67,20 @@ function Profile({ user, me, posts, friends, requests, onChanged }) {
                 <div className="card w-full max-w-md">
                     <h3 className="mb-2 font-bold">Friend requests</h3>
                     {requests.map((r) => (
-                        <div key={r.id} className="flex items-center justify-between gap-2 py-1">
-                            <span>{r.username}</span>
-                            <button className="btn btn-sm" onClick={() => run(`/users/${me_}/accept/${r.id}`)}>
-                                Accept
-                            </button>
+                    <div key={r.id} className="flex items-center justify-between gap-2 py-1">
+                        <Link to={`/profile/${encodeURIComponent(r.username)}`}>{r.username}</Link>
+                        <div className="flex gap-2">
+                        <button className="btn btn-sm" onClick={() => run(`/users/${enc(r.username)}/accept`)}>
+                            Accept
+                        </button>
+                        <button className="btn btn-sm" onClick={() => run(`/users/${enc(r.username)}/decline`)}>
+                            Decline
+                        </button>
                         </div>
+                    </div>
                     ))}
                 </div>
-            )}
+                )}
 
             <h3 className="mt-4 w-full border-b border-paper/40 pb-1 text-left font-bold">
                 Friends ({friends.length})

@@ -1,84 +1,100 @@
-
 import express from "express";
 import Album from "../models/Album.js";
+import Post from "../models/Post.js";
+import Activity from "../models/Activity.js";
+import { requireLogin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// GET all albums
+async function nextId(Model) {
+  const last = await Model.findOne().sort({ id: -1 });
+  return last ? last.id + 1 : 1;
+}
+
 router.get("/", async (_req, res) => {
   const albums = await Album.find().sort({ createdAt: -1 });
   res.json(albums);
 });
 
-// GET one album
 router.get("/:id", async (req, res) => {
   const album = await Album.findOne({ id: Number(req.params.id) });
   if (!album) return res.status(404).json({ error: "Album not found" });
-  res.json(album);
+  const posts = await Post.find({ id: { $in: album.posts } });
+  res.json({ ...album.toObject(), postsFull: posts });
 });
 
-// CREATE album
-router.post("/", async (req, res) => {
-  try {
-    const { username, name, description, hashtags, posts } = req.body;
-    if (!username || !name) return res.status(400).json({ error: "username and name required" });
+router.post("/", requireLogin, async (req, res) => {
+  const { name, description, hashtags, posts } = req.body;
+  if (!name) return res.status(400).json({ error: "name required" });
+  const id = await nextId(Album);
+  const album = await Album.create({
+    id, username: req.session.user.username, name,
+    description: description || "", hashtags: hashtags || [], posts: posts || [],
+  });
+  await Post.updateMany({ id: { $in: posts || [] } }, { $addToSet: { albums: id } });
+  await Activity.create({
+    id: await nextId(Activity), username: req.session.user.username,
+    type: "album_created", targetType: "album", targetId: id, metadata: { name },
+  });
+  res.status(201).json(album);
+});
 
-    const last = await Album.findOne().sort({ id: -1 });
-    const nextId = last ? last.id + 1 : 1;
-
-    const album = await Album.create({
-      id: nextId,
-      username,
-      name,
-      description: description || "",
-      hashtags: hashtags || [],
-      posts: posts || [],
-    });
-    res.status(201).json(album);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+router.put("/:id", requireLogin, async (req, res) => {
+  const album = await Album.findOne({ id: Number(req.params.id) });
+  if (!album) return res.status(404).json({ error: "Album not found" });
+  if (album.username !== req.session.user.username && req.session.user.role !== "admin") {
+    return res.status(403).json({ error: "Not allowed" });
   }
-});
-
-// EDIT album
-router.put("/:id", async (req, res) => {
   const { name, description, hashtags } = req.body;
-  const album = await Album.findOneAndUpdate(
-    { id: Number(req.params.id) },
-    { $set: { name, description, hashtags } },
-    { new: true }
-  );
-  if (!album) return res.status(404).json({ error: "Album not found" });
+  if (name !== undefined) album.name = name;
+  if (description !== undefined) album.description = description;
+  if (hashtags !== undefined) album.hashtags = hashtags;
+  await album.save();
   res.json(album);
 });
 
-// ADD a post to album
-router.post("/:id/posts/:postId", async (req, res) => {
-  const album = await Album.findOneAndUpdate(
-    { id: Number(req.params.id) },
-    { $addToSet: { posts: Number(req.params.postId) } },
-    { new: true }
-  );
+router.post("/:id/posts/:postId", requireLogin, async (req, res) => {
+  const album = await Album.findOne({ id: Number(req.params.id) });
   if (!album) return res.status(404).json({ error: "Album not found" });
+  if (album.username !== req.session.user.username) {
+    return res.status(403).json({ error: "Not allowed" });
+  }
+  const postId = Number(req.params.postId);
+  if (!album.posts.includes(postId)) {
+    album.posts.push(postId);
+    await album.save();
+    await Post.updateOne({ id: postId }, { $addToSet: { albums: album.id } });
+    await Activity.create({
+      id: await nextId(Activity), username: album.username,
+      type: "photos_added", targetType: "album", targetId: album.id,
+      metadata: { count: 1, name: album.name },
+    });
+  }
   res.json(album);
 });
 
-// REMOVE a post from album
-router.delete("/:id/posts/:postId", async (req, res) => {
-  const album = await Album.findOneAndUpdate(
-    { id: Number(req.params.id) },
-    { $pull: { posts: Number(req.params.postId) } },
-    { new: true }
-  );
+router.delete("/:id/posts/:postId", requireLogin, async (req, res) => {
+  const album = await Album.findOne({ id: Number(req.params.id) });
   if (!album) return res.status(404).json({ error: "Album not found" });
+  if (album.username !== req.session.user.username) {
+    return res.status(403).json({ error: "Not allowed" });
+  }
+  const postId = Number(req.params.postId);
+  album.posts = album.posts.filter((id) => id !== postId);
+  await album.save();
+  await Post.updateOne({ id: postId }, { $pull: { albums: album.id } });
   res.json(album);
 });
 
-// DELETE album
-router.delete("/:id", async (req, res) => {
-  const deleted = await Album.findOneAndDelete({ id: Number(req.params.id) });
-  if (!deleted) return res.status(404).json({ error: "Album not found" });
-  res.json({ success: true, deleted });
+router.delete("/:id", requireLogin, async (req, res) => {
+  const album = await Album.findOne({ id: Number(req.params.id) });
+  if (!album) return res.status(404).json({ error: "Album not found" });
+  if (album.username !== req.session.user.username && req.session.user.role !== "admin") {
+    return res.status(403).json({ error: "Not allowed" });
+  }
+  await Post.updateMany({ albums: album.id }, { $pull: { albums: album.id } });
+  await Album.deleteOne({ id: album.id });
+  res.json({ success: true });
 });
 
 export default router;

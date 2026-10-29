@@ -1,71 +1,68 @@
-
 import express from "express";
-import bcrypt from "bcrypt";
 import User from "../models/User.js";
+import { requireLogin } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// SIGN UP
 router.post("/signup", async (req, res) => {
   try {
-    const { username, password, bio, profilePic } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ success: false, error: "Username and password are required" });
+    const { username, email, password, name } = req.body;
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: "username, email, password required" });
     }
-
-    const existing = await User.findOne({ username });
-    if (existing) {
-      return res.status(409).json({ success: false, error: "Username already taken" });
+    if (await User.findOne({ email: email.toLowerCase() })) {
+      return res.status(409).json({ error: "Email already registered" });
     }
-
-    const hashed = await bcrypt.hash(password, 10);
-
-    // Auto-increment integer id
+    if (await User.findOne({ username })) {
+      return res.status(409).json({ error: "Username taken" });
+    }
     const last = await User.findOne().sort({ id: -1 });
     const nextId = last ? last.id + 1 : 1;
-
     const user = await User.create({
-      id: nextId,
-      username,
-      password: hashed,
-      bio: bio || "",
-      profilePic: profilePic || "/images/robot.jpg",
-      posts: [],
-      friends: [],
-      friendRequests: [],
+      id: nextId, username, email, password, name: name || username,
+      posts: [], friends: [], friendRequests: [], sentRequests: [],
     });
-
-    const { password: _pw, ...safe } = user.toObject();
+    req.session.user = {
+      id: user.id, username: user.username, email: user.email, role: user.role,
+    };
+    const { password: _p, ...safe } = user.toObject();
     res.status(201).json({ success: true, user: safe });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// SIGN IN
 router.post("/signin", async (req, res) => {
   try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ success: false, error: "Username and password are required" });
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "email and password required" });
     }
-
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(401).json({ success: false, error: "Invalid credentials" });
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user || user.password !== password) {
+      return res.status(401).json({ error: "Invalid credentials" });
     }
-
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(401).json({ success: false, error: "Invalid credentials" });
-    }
-
-    const { password: _pw, ...safe } = user.toObject();
+    req.session.user = {
+      id: user.id, username: user.username, email: user.email, role: user.role,
+    };
+    const { password: _p, ...safe } = user.toObject();
     res.json({ success: true, user: safe });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ error: err.message });
   }
+});
+
+router.get("/me", requireLogin, async (req, res) => {
+  const user = await User.findOne({ id: req.session.user.id }).select("-password");
+  if (!user) return res.status(404).json({ error: "User not found" });
+  res.json({ user });
+});
+
+router.post("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid");
+    res.json({ success: true });
+  });
 });
 
 export default router;
