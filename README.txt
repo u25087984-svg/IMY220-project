@@ -11,8 +11,7 @@ HOW TO RUN
 4. Open http://localhost:5173 in your browser.
 
 DATABASE CONNECTION STRING
-mongodb+srv://simonvogel365_db_user:n1ZudXLc1BHw9J91@cluster0.wgacw4d.mongodb.net/?appName=Cluster0
-
+mongodb+srv://YOUR_USERNAME:YOUR_PASSWORD@YOUR_CLUSTER.mongodb.net/imy220?retryWrites=true&w=majority
 DIRECTORY STRUCTURE
 /backend       -> Node.js/Express API, Mongoose models, routes, and database connection.
 /frontend      -> React/Vite frontend, Tailwind CSS styling, and UI components.
